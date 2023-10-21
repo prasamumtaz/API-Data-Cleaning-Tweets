@@ -43,9 +43,14 @@ swagger_config = {
 }
 swagger = Swagger(app, template=swagger_template, config=swagger_config)
 
-@swag_from("docs/csv_upload.yml", methods=['GET', 'POST'])
+# @swag_from("docs/csv_upload.yml", methods=['GET', 'POST'])
 @app.route('/', methods=['GET', 'POST'])
 def uploadFile():
+	json_response = {
+        'status_code': 200,
+        'description': "Original Teks",
+        'data': "Halo, apa kabar semua?",
+    }
 	if request.method == 'POST':
 	# upload file flask
 		f = request.files.get('file')
@@ -60,7 +65,9 @@ def uploadFile():
 		session['uploaded_data_file_path'] = os.path.join(basedir, app.config['UPLOAD_FOLDER'], data_filename)
 
 		return render_template('index2.html')
-	return render_template("index.html")
+	#return render_template("index.html")
+	response_data = jsonify(json_response)
+	return response_data
 
 
 @app.route('/show_data')
