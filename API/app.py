@@ -43,7 +43,7 @@ swagger_config = {
 }
 swagger = Swagger(app, template=swagger_template, config=swagger_config)
 
-# @swag_from("docs/csv_upload.yml", methods=['GET', 'POST'])
+@swag_from("docs/csv_upload.yml", methods=['GET', 'POST'])
 @app.route('/', methods=['GET', 'POST'])
 def uploadFile():
 	json_response = {
