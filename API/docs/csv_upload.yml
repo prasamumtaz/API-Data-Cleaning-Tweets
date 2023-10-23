@@ -1,12 +1,13 @@
 tags:
-  - name: File Upload
+  - name: File Upload CSV
 get:
   description: File yang akan di upload
 parameters:
-  - name: File
-    in: formData
+  - in: formData
+    name: file
     required: True
     type: file
+    description: CSV file to upload
 responses:
     '200':
       description: Successful response

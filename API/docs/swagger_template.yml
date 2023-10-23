@@ -1,0 +1,37 @@
+---
+swagger: '2.0'
+info:
+  title: CSV Upload and Display API
+  description: API for uploading and displaying CSV files
+  version: 1.0
+paths:
+  /:
+    get:
+      tags:
+        - Home
+      operationId: showData
+      responses:
+        200:
+          description: Successful operation
+  /show_data:
+    get:
+      tags:
+        - Show Data
+      operationId: showData
+      responses:
+        200:
+          description: Successful operation
+  /uploadFile:
+    post:
+      tags:
+        - Upload File
+      operationId: uploadFile
+      parameters:
+        - name: file
+          in: formData
+          type: file
+          required: true
+          description: The CSV file to upload
+      responses:
+        200:
+          description: Successful upload
