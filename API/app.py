@@ -1,51 +1,112 @@
+import re
 import pandas as pd
-from flask import *
-import os
-from werkzeug.utils import secure_filename
+from flask import Flask, jsonify
+from flask import request
+from flasgger import Swagger, LazyString, LazyJSONEncoder
+from flasgger import swag_from
 
-UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
+class CustomFlaskAppWithEncoder(Flask):
+    json_provider_class = LazyJSONEncoder
 
-# Define allowed files
-ALLOWED_EXTENSIONS = {'csv'}
+app = CustomFlaskAppWithEncoder(__name__)
 
-app = Flask(__name__)
+swagger_template = dict(
+    info = {
+        'title' : LazyString(lambda: "API Documentation for Data Processing and Modeling"),
+        'version' : LazyString(lambda: "1.0.0"),
+        'description' : LazyString(lambda: "Dokumentasi API untuk Data Processing dan Modeling"),
+    },
+    host = LazyString(lambda: request.host)
+)
 
-# Configure upload file path flask
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+swagger_config = {
+    "headers" : [],
+    "specs" : [
+        {
+            "endpoint": "docs",
+            "route" : "/docs.json",
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    # "static_folder": "static",  # must be set by user
+    "swagger_ui": True,
+    "specs_route": "/docs/"
+}
+swagger = Swagger(app, template=swagger_template, config = swagger_config)
 
-app.secret_key = 'This is your secret key to utilize session in Flask'
+#Fucntion to Clean tweet data
+def Clean(Tweet):
+    #lowercase for every word
+    Tweet = Tweet.lower()
 
-@app.route('/', methods=['GET', 'POST'])
-def uploadFile():
-	if request.method == 'POST':
-	# upload file flask
-		f = request.files.get('file')
+    #Clean Pattern
+    #remove USER
+    Tweet = re.sub(r'user|user:', ' ', Tweet)
+    #remove 'RT'
+    Tweet = re.sub(r'^rt[\s]+| rt', ' ', Tweet)
+    #remove 'URL'
+    Tweet = re.sub(r'^url[\s]+| url', ' ', Tweet)
+    #remove HTTPS
+    Tweet = re.sub(r'https\S+|https', ' ', Tweet)
+    #remove HTTP
+    Tweet = re.sub(r'http\S+|http', ' ', Tweet)
+    #remove &amp
+    Tweet = re.sub(r'&amp', ' ', Tweet)
 
-		# Extracting uploaded file name
-		data_filename = secure_filename(f.filename)
-		basedir = os.path.abspath(os.path.dirname(__file__))
+    #Clean_Unnecessary_Character
+    #remove \n or every word afte '\' with space
+    Tweet = re.sub(r'\\n|\\[a-zA-Z0-9]+', ' ', Tweet)
+    #remove text emoji
+    Tweet = re.sub(r'[^a-zA-Z0-9\s]{2,}|:[a-zA-Z0-9]{0,}', ' ', Tweet)
+    #remove all unnecessary character 
+    Tweet = re.sub(r'[^0-9a-zA-Z\s]+', ' ', Tweet)
+    #remove extra space
+    Tweet = re.sub(r'  +', ' ', Tweet)
+    #remove space at the start or the end of string
+    Tweet = re.sub(r'^ +| +$', '', Tweet)
+    
+    return Tweet
 
-		f.save(os.path.join(basedir, app.config['UPLOAD_FOLDER'], data_filename))
+@swag_from("docs/text_processing.yml", methods=['POST'])
+@app.route('/text-processing', methods=['POST'])
+def text_processing():
 
-		session['uploaded_data_file_path'] = os.path.join(basedir, app.config['UPLOAD_FOLDER'], data_filename)
+    text = request.form.get('text')
 
-		return render_template('index2.html')
-	return render_template("index.html")
-	
+    json_response = {
+        'status_code': 200,
+        'description': "Teks cleaning process is successful",
+        'data': Clean(text)
+    }
 
+    response_data = jsonify(json_response)
+    return response_data
 
-@app.route('/show_data')
-def showData():
-	# Uploaded File Path
-	data_file_path = session.get('uploaded_data_file_path', None)
-	# read csv
-	uploaded_df = pd.read_csv(data_file_path,
-							encoding='unicode_escape')
-	# Converting to html Table
-	uploaded_df_html = uploaded_df.to_html()
-	return render_template('show_csv_data.html',
-						data_var=uploaded_df_html)
+@swag_from("docs/processing_file.yml", methods=['POST'])
+@app.route('/processing-file', methods=['POST'])
+def text_processing_file():
 
+    #CSV File 
+	#Upload CSV File 
+    file = request.files.getlist('file')[0]
+    # Import/read CSV file using pandas
+    df = pd.read_csv(file)
+    #Convert text that want to process into list
+    text_file = df.text.to_list()
+
+    #Running cleaning data function (Clean)
+    clean_text = []
+    for text in text_file:
+        clean_text.append(Clean(text))
+
+    json_response = {
+        'status_code': 200,
+        'description': "Teks cleaning process is successful",
+        'data': clean_text,
+    }
+
+    response_data = jsonify(json_response)
+    return response_data
 
 if __name__ == '__main__':
-	app.run(debug=True)
+   app.run()
