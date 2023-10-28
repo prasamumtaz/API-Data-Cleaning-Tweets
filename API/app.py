@@ -1,18 +1,22 @@
 import re
 import pandas as pd
+import sqlite3
 from flask import Flask, jsonify
 from flask import request
 from flasgger import Swagger, LazyString, LazyJSONEncoder
 from flasgger import swag_from
+import os
 
 class CustomFlaskAppWithEncoder(Flask):
     json_provider_class = LazyJSONEncoder
+
+current_directory = os.path.dirname(os.path.abspath(__file__))
 
 app = CustomFlaskAppWithEncoder(__name__)
 
 swagger_template = dict(
     info = {
-        'title' : LazyString(lambda: "API Documentation for Data Processing and Modeling"),
+        'title' : LazyString(lambda: "API Documentation for Data Processing"),
         'version' : LazyString(lambda: "1.0.0"),
         'description' : LazyString(lambda: "Dokumentasi API untuk Data Processing dan Modeling"),
     },
@@ -70,9 +74,27 @@ def Clean(Tweet):
 @swag_from("docs/text_processing.yml", methods=['POST'])
 @app.route('/text-processing', methods=['POST'])
 def text_processing():
-
+    #request to input text
     text = request.form.get('text')
 
+    #run Clean(text) fuction to clean input text
+    clean_text = Clean(text)
+
+    #connect sqlite database 
+    conn = sqlite3.connect(current_directory + "\DataBase\Database_processing.db")
+    cursor = conn.cursor()
+
+    #input query to store input file into database
+    query1 = """INSERT INTO input_text VALUES('{t}')""".format(t = text)
+    cursor.execute(query1)
+
+    #input query to store input file into database
+    query2 = """INSERT INTO output_text VALUES('{t}')""".format(t = clean_text)
+    cursor.execute(query2)
+
+    #commit all query
+    conn.commit()
+    
     json_response = {
         'status_code': 200,
         'description': "Teks cleaning process is successful",
@@ -87,22 +109,31 @@ def text_processing():
 def text_processing_file():
 
     #CSV File 
-	#Upload CSV File 
-    file = request.files.getlist('file')[0]
-    # Import/read CSV file using pandas
-    df = pd.read_csv(file)
+	#Upload single CSV File 
+    file = request.files('file')
+
+    #connect sqlite database 
+    conn = sqlite3.connect(current_directory + "\DataBase\Database_processing.db")
+    #cursor = conn.cursor()
+
+    #read CSV file
+    df = pd.read_csv(file, encoding='latin1')
+    #Filter column Tweet column
+    df2= pd.DataFrame(df[['Tweet']])
+    df2.to_sql('input_Tweet', conn, if_exists='append', index = False)
+
     #Convert text that want to process into list
-    text_file = df.text.to_list()
+    text_file = df['Tweet'].to_list()
 
     #Running cleaning data function (Clean)
-    clean_text = []
+    clean_Tweet = []
     for text in text_file:
-        clean_text.append(Clean(text))
+         clean_Tweet.append(Clean(text))
 
     json_response = {
         'status_code': 200,
         'description': "Teks cleaning process is successful",
-        'data': clean_text,
+        'data': "process cleaning text from CSV file has succeed"
     }
 
     response_data = jsonify(json_response)

@@ -1,12 +1,11 @@
 tags:
   - name: Text Processing
-get:
-  description: Teks yang akan diproses
 parameters:
   - name: text
     in: formData
     required: True
     type: string
+    description: Input text
 responses:
     '200':
       description: Successful response
