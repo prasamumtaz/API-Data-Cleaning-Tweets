@@ -1,1 +1,0 @@
-# Binar-Gold-Challenge
