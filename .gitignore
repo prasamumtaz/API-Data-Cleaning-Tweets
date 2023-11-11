@@ -12,3 +12,8 @@ API/ignore_backup/
 
 #ignore every file in Dataset
 Dataset/
+
+#ignore file .gitignore
+*.gitignore
+
+Report Analysis.pptx
