@@ -73,6 +73,9 @@ def text_processing():
 
     #commit all query
     conn.commit()
+
+    #Close the connection
+    conn.close()
     
     json_response = {
         'status_code': 200,
@@ -100,18 +103,21 @@ def upload_processing_file():
     #Filter column Tweet column
     df_tweet= pd.DataFrame(df_fileInput[['Tweet']])
 
-    #Drop duplicates
-    df_tweet= df_tweet.drop_duplicates(subset='Tweet')
-
     #store all rows from filter column in csv file 
     #into Database_processing.db in 'input_Tweet' table
     df_tweet.to_sql('input_Tweet', conn, if_exists='append', index = False)
+
+     #Drop duplicates
+    df_tweet= df_tweet.drop_duplicates(subset='Tweet')
 
     #apply data cleaning fucntion from DataCleaning
     df_tweet['Tweet'] = df_tweet['Tweet'].apply(lambda x: ' '.join(map(str, clean_data(x))))
 
     #store file values into Database_processing.db in 'input_Tweet' table
     df_tweet.to_sql('clean_Tweet', conn, if_exists='append', index = False)
+
+    #Close the connection
+    conn.close()
 
     # Convert text that want to process into one string for preview output endpoint
     text_all_clean_tweet = " ".join(text for text in df_tweet.Tweet)
