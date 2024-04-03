@@ -1,4 +1,5 @@
 # Binar-Gold-Challenge
+Get started with Exploratory data analysis (EDA) using pandas, regex, matplotlib and seaborn
 ## Tentang API
 ![Alt text](image.png)
 Proses pembuatan API menggunakan flask dan Swagger UI untuk membantu membuat tampilan antar-muka dokumentasi (docs) yang lebih interaktif. Pada API ini terdapat 2 endpoint yaitu:
